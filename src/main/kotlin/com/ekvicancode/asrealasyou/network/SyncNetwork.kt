@@ -1,30 +1,20 @@
 package com.ekvicancode.asrealasyou.network
 
-import com.ekvicancode.asrealasyou.comps.PlayerLife
+import com.ekvicancode.asrealasyou.AsRealAsYou
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.network.PacketByteBuf
-import net.minecraft.network.codec.PacketCodec
 import net.minecraft.util.Identifier
 
 object SyncNetwork {
-    private val LIFE_SYNC = Identifier("asrealasyou:life")
+    private val TIME_SYNC_ID = Identifier("asrealasyou", "time_sync")
 
-    data class LifeDataPacket(val days: Long, val years: Long)
+    val TIME_SYNC_CODEC = ServerPlayNetworking.createPacketIdCodec(TIME_SYNC_ID)
 
     fun register() {
-        ServerPlayNetworking.registerGlobalReceiver(LIFE_SYNC) { server, player, _, buf, _ ->
-            val packet = PacketCodec.streamCoded(LifeDataPacket::class.java).decode(buf)
+        ServerPlayNetworking.registerGlobalReceiver(TIME_SYNC_ID) { server, player, handler, buf, responseSender ->
+            val time = buf.readLong()
+            AsRealAsYou.realDayTime = time
         }
-    }
-
-    fun sendLifeData(player: PlayerEntity) {
-        val lifeComp = PlayerLife.ID.get(player)
-        val stats = lifeComp.getStats()
-
-        val buf = PacketByteBufs.create()
-        buf.writeLong(stats.daysLived)
-        buf.writeLong(stats.yearsLived)
-
-        ServerPlayNetworking.send(player, LIFE_SYNC, buf)
     }
 }

@@ -3,13 +3,12 @@
 	"id": "as-real-as-you",
 	"version": "${version}",
 	"name": "As real as You",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Real life in Minecraft",
 	"authors": [
-		"Me!"
+		"ekvi"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/ekvi-can-code/as-real-as-you"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/as-real-as-you/icon.png",

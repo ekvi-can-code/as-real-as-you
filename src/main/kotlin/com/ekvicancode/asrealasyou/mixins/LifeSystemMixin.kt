@@ -9,43 +9,44 @@ import net.minecraft.text.Text
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
 @Mixin(PlayerEntity::class)
-class LifeSystemMixin {
-    @Inject(method = "tick", at = At("HEAD"))
-    private fun checkLifeStatus(ci: CallbackInfo) {
+abstract class LifeSystemMixin {
+
+    @Inject(method = ["hurtTime"], at = [arrayOf(At("HEAD"))])
+    private fun checkDeath(source: DamageSource, amount: Float, cir: CallbackInfoReturnable<Boolean>): Boolean {
         val player = this as PlayerEntity
-        if (player.world.isClient) return
-
-        val lifeComp = PlayerLife.ID.get(player)
-
-        if (lifeComp.checkDeath()) {
-            player.sendMessage(Text.literal("Ты умер от старости"), true)
-            player.damage(DamageSource.GENERIC, 1000f)
+        if (player is ServerPlayerEntity) {
+            val world = player.world as ServerWorld
+            val lifeComp = player.getComponent(PlayerLife.key)
+            if (lifeComp != null && lifeComp.totalLives <= 0) {
+                player.sendMessage(Text.literal("You have no lives left!"), true)
+                player.damage(source, Float.MAX_VALUE)
+                return true
+            }
         }
+        return false
     }
 
-    @Inject(method = "onDeath", at = At("HEAD"), cancellable = true)
-    private fun rebirth(source: DamageSource, ci: CallbackInfo) {
+    @Inject(method = ["onDeath"], at = [arrayOf(At("HEAD"))])
+    private fun onPlayerDeath(source: DamageSource, cir: CallbackInfoReturnable<Boolean>) {
         val player = this as PlayerEntity
-        if (player.world.isClient) return
+        val world = player.world
+        resetLife(player)
+    }
 
-        val lifeComp = PlayerLife.ID.get(player)
-        lifeComp.resetLife()
+    private fun resetLife(player: PlayerEntity) {
+        player.inventory.clear()
+        player.experienceLevel = 0
+        player.totalExperience = 0
+        player.health = 20f
+        player.hungerManager.foodLevel = 20
 
-        player.apply {
-            inventory.clear()
-            experienceLevel = 0
-            totalExperience = 0
-            health = 20f
-            foodLevel = 20
+        val spawnPos = (player.world as? ServerWorld)?.spawnPos
+        if (spawnPos != null) {
+            player.teleport(player.world as ServerWorld, spawnPos.x.toDouble(), spawnPos.y.toDouble(), spawnPos.z.toDouble(), 0f, 0f)
         }
-
-        player.teleport(player.world as ServerWorld,
-                player.world.spawnPos.x + 0.5, player.world.spawnPos.y + 1.0, player.world.spawnPos.z + 0.5, 0f, 0f)
-
-        player.sendMessage(Text.literal("Новая жизнь началась!"), true)
-        ci.cancel()
+        player.sendMessage(Text.literal("Respawned with new life!"), true)
     }
 }
