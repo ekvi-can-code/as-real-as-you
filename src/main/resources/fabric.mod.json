@@ -1,29 +1,25 @@
 {
 	"schemaVersion": 1,
 	"id": "as-real-as-you",
-	"version": "${version}",
+	"version": "1.0.0",
 	"name": "As real as You",
-	"description": "Real life in Minecraft",
-	"authors": [
-		"ekvi"
-	],
-	"contact": {
-		"sources": "https://github.com/ekvi-can-code/as-real-as-you"
-	},
-	"license": "CC0-1.0",
+	"description": "",
+	"authors": [],
+	"contact": {},
+	"license": "MIT",
 	"icon": "assets/as-real-as-you/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
 			{
-				"value": "com.ekvicancode.AsRealAsYou",
-				"adapter": "kotlin"
+				"adapter": "kotlin",
+				"value": "com.ekvicancode.asrealasyou.AsRealAsYou"
 			}
 		],
 		"client": [
 			{
-				"value": "com.ekvicancode.AsRealAsYouClient",
-				"adapter": "kotlin"
+				"adapter": "kotlin",
+				"value": "com.ekvicancode.asrealasyou.AsRealAsYouClient"
 			}
 		]
 	},
