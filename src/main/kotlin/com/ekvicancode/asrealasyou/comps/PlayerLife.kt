@@ -1,4 +1,4 @@
-package com.ekvicancode.comps
+package com.ekvicancode.asrealasyou.comps
 
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTestModInitializer
 import net.minecraft.entity.player.PlayerEntity

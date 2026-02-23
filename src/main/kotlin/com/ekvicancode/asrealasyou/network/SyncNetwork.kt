@@ -1,6 +1,6 @@
-package com.ekvicancode.network
+package com.ekvicancode.asrealasyou.network
 
-import com.ekvicancode.comps.PlayerLife
+import com.ekvicancode.asrealasyou.comps.PlayerLife
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.network.codec.PacketCodec

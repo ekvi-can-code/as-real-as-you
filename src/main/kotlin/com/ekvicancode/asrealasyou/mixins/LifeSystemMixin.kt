@@ -1,6 +1,6 @@
-package com.ekvicancode.mixins
+package com.ekvicancode.asrealasyou.mixins
 
-import com.ekvicancode.comps.PlayerLife
+import com.ekvicancode.asrealasyou.comps.PlayerLife
 import net.minecraft.entity.damage.DamageSource
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.server.network.ServerPlayerEntity

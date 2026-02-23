@@ -1,8 +1,8 @@
-package com.ekvicancode
+package com.ekvicancode.asrealasyou
 
-import com.ekvicancode.comps.PlayerLife
-import com.ekvicancode.HUD.PassportHUD
-import com.ekvi.network.SyncNetwork
+import com.ekvicancode.asrealasyou.comps.PlayerLife
+import com.ekvicancode.asrealasyou.HUD.PassportHUD
+import com.ekvi.asrealasyou.network.SyncNetwork
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper

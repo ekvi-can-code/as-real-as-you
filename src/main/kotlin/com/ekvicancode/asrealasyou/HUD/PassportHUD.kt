@@ -1,7 +1,7 @@
-package com.ekvicancode.HUD
+package com.ekvicancode.asrealasyou.HUD
 
-import com.ekvicancode.AsRealAsYouMod
-import com.ekvicancode.comps.PlayerLife
+import com.ekvicancode.asrealasyou.AsRealAsYouMod
+import com.ekvicancode.asrealasyou.comps.PlayerLife
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.render.entity.EntityRenderDispatcher

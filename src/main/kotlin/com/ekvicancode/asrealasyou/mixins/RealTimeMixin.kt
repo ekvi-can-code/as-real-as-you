@@ -1,4 +1,4 @@
-package com.ekvicancode.mixins
+package com.ekvicancode.asrealasyou.mixins
 
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.math.MathHelper
