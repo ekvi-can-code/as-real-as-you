@@ -4,10 +4,12 @@ import com.ekvicancode.asrealasyou.managers.LifeSystemManager
 import com.ekvicancode.asrealasyou.managers.RealTimeManager
 import com.ekvicancode.asrealasyou.network.SyncPackets
 import net.fabricmc.api.ModInitializer
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.minecraft.server.MinecraftServer
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.Text
 import net.minecraft.world.GameRules
@@ -27,6 +29,7 @@ object AsRealAsYou : ModInitializer {
 		SyncPackets.registerServer()
 
 		ServerLifecycleEvents.SERVER_STARTED.register { server ->
+			LifeSystemManager.init(server)
 			disableDaylightCycle(server)
 			LOGGER.info("Daylight cycle disabled, real time sync active")
 		}
@@ -41,8 +44,8 @@ object AsRealAsYou : ModInitializer {
 
 			if (absentMinutes > 0) {
 				LOGGER.info(
-					"Player ${player.name.string} absent for " +
-							"$absentMinutes min. Age: ${data.ageDays} days"
+					"Player ${player.name.string} absent for $absentMinutes min. " +
+							"Age: ${data.ageDays} days"
 				)
 			}
 
@@ -62,6 +65,12 @@ object AsRealAsYou : ModInitializer {
 			LifeSystemManager.removePlayer(player)
 		}
 
+		ServerLivingEntityEvents.AFTER_DEATH.register { entity, _ ->
+			if (entity is ServerPlayerEntity) {
+				onPlayerDied(entity)
+			}
+		}
+
 		ServerTickEvents.END_SERVER_TICK.register { server ->
 			tickCounter++
 			if (tickCounter >= TIME_SYNC_INTERVAL) {
@@ -71,6 +80,35 @@ object AsRealAsYou : ModInitializer {
 		}
 
 		LOGGER.info("AsRealAsYou initialized!")
+	}
+
+	private fun onPlayerDied(player: ServerPlayerEntity) {
+		LifeSystemManager.onPlayerDeath(player)
+		val data = LifeSystemManager.getData(player)
+
+		player.sendMessage(
+			Text.literal("§cВы умерли! Жизнь начинается заново.")
+		)
+
+		SyncPackets.sendLifeData(player, data.birthEpochMs, data.totalDeaths)
+		resetPlayerProgress(player)
+	}
+
+	private fun resetPlayerProgress(player: ServerPlayerEntity) {
+		player.inventory.clear()
+		player.experienceLevel = 0
+		player.experienceProgress = 0f
+		player.totalExperience = 0
+
+		val spawnPos = player.serverWorld.spawnPos
+		player.teleport(
+			player.serverWorld,
+			spawnPos.x.toDouble() + 0.5,
+			spawnPos.y.toDouble(),
+			spawnPos.z.toDouble() + 0.5,
+			0f,
+			0f
+		)
 	}
 
 	private fun disableDaylightCycle(server: MinecraftServer) {
