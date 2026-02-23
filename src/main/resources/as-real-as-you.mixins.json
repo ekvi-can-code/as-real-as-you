@@ -1,14 +1,14 @@
 {
 	"required": true,
-	"package": "com.ekvicancode.mixin",
+	"package": "com.ekvicancode.asrealasyou.mixins",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"ServerLevelMixin",
+		"PlayerMixin",
+		"PlayerDataSaveMixin"
 	],
+	"client": [],
 	"injectors": {
 		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
 	}
 }
