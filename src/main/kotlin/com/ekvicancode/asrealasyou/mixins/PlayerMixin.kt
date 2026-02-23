@@ -11,14 +11,15 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
-@Mixin(LivingEntity::class)
-class PlayerMixin {
-
-    @Inject(
-        method = ["method_6082(Lnet/minecraft/class_1282;)V"],
-        at = [At("HEAD")]
+@Mixin(PlayerEntity::class)
+@Inject(
+    method = "method_9236(Lnet/minecraft/class_1282;)V",
+    at = @At("RETURN")
     )
-    private fun onPlayerDeath(damageSource: DamageSource, ci: CallbackInfo) {
+    private fun onPlayerDeath(
+        damageSource: DamageSource,
+        ci: CallbackInfo
+    ){
         val player = this as? ServerPlayerEntity ?: return
 
         LifeSystemManager.onPlayerDeath(player)

@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
 @Mixin(ServerPlayerEntity::class)
 class PlayerDataSaveMixin {
-
     @Inject(
         method = ["method_9251(Lnet/minecraft/nbt/NbtCompound;)V"],
         at = [At("RETURN")]
