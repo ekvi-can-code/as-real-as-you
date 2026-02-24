@@ -7,8 +7,6 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.WorldSavePath
 import java.io.File
-
-// Данные игрока прямо здесь — без отдельного файла
 data class PlayerLifeData(
     @SerializedName("birth_epoch_ms")
     var birthEpochMs: Long = System.currentTimeMillis(),

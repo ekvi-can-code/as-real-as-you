@@ -143,14 +143,14 @@ object PassportHUD {
 
         drawContext.drawTextWithShadow(
             textRenderer,
-            "§e$days дней",
+            "§e$years лет",
             textX, textY, 0xFFFFFF
         )
         textY += 9
 
         drawContext.drawTextWithShadow(
             textRenderer,
-            "§e($years лет)",
+            "§e($days дней)",
             textX, textY, 0xFFFFFF
         )
         textY += 14
@@ -194,7 +194,7 @@ object PassportHUD {
 
         drawContext.drawTextWithShadow(
             textRenderer,
-            "§7Реальное время:",
+            "§7Время:",
             textX, textY, 0xAAAAAA
         )
         textY += 9
