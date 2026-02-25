@@ -19,11 +19,6 @@ object ClientLifeData {
 object ClientPacketHandler {
 
     fun register() {
-        PayloadTypeRegistry.playS2C().register(
-            LifeSyncPayload.ID,
-            LifeSyncPayload.CODEC
-        )
-
         ClientPlayNetworking.registerGlobalReceiver(LifeSyncPayload.ID) { payload, _ ->
             ClientLifeData.birthEpochMs = payload.birthEpochMs
             ClientLifeData.totalDeaths = payload.totalDeaths

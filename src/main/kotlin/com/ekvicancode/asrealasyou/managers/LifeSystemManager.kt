@@ -96,4 +96,13 @@ object LifeSystemManager {
     fun removePlayer(player: ServerPlayerEntity) {
         playerData.remove(player.uuidAsString)
     }
+    
+    fun checkAgeLimitAndKill(player: ServerPlayerEntity): Boolean {
+        val data = getData(player)
+        if (data.ageYears >= 70) {
+            player.kill()
+            return true
+        }
+        return false
+    }
 }

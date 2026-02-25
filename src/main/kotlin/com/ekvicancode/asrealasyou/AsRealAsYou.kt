@@ -1,9 +1,11 @@
 package com.ekvicancode.asrealasyou
 
+import com.ekvicancode.asrealasyou.commands.ModCommands
 import com.ekvicancode.asrealasyou.managers.LifeSystemManager
 import com.ekvicancode.asrealasyou.managers.RealTimeManager
 import com.ekvicancode.asrealasyou.network.SyncPackets
 import net.fabricmc.api.ModInitializer
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
@@ -27,6 +29,10 @@ object AsRealAsYou : ModInitializer {
 		LOGGER.info("AsRealAsYou initializing...")
 
 		SyncPackets.registerServer()
+
+		CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
+			ModCommands.register(dispatcher)
+		}
 
 		ServerLifecycleEvents.SERVER_STARTED.register { server ->
 			LifeSystemManager.init(server)
@@ -76,6 +82,7 @@ object AsRealAsYou : ModInitializer {
 			if (tickCounter >= TIME_SYNC_INTERVAL) {
 				tickCounter = 0
 				syncTimeForAllWorlds(server)
+				checkAgeLimits(server)
 			}
 		}
 
@@ -106,6 +113,7 @@ object AsRealAsYou : ModInitializer {
 			spawnPos.x.toDouble() + 0.5,
 			spawnPos.y.toDouble(),
 			spawnPos.z.toDouble() + 0.5,
+			emptySet(),
 			0f,
 			0f
 		)
@@ -128,5 +136,11 @@ object AsRealAsYou : ModInitializer {
 		val currentDay = world.timeOfDay / 24000L
 		val newTime = currentDay * 24000L + timeOfDay
 		world.timeOfDay = newTime
+	}
+	
+	private fun checkAgeLimits(server: MinecraftServer) {
+		for (player in server.playerManager.playerList) {
+			LifeSystemManager.checkAgeLimitAndKill(player)
+		}
 	}
 }
