@@ -9,8 +9,8 @@ import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 
 data class LifeSyncPayload(
-    val birthEpochMs: Long,
-    val totalDeaths: Int
+    val totalDeaths: Int,
+    val currentAgeMs: Long
 ) : CustomPayload {
 
     companion object {
@@ -21,13 +21,13 @@ data class LifeSyncPayload(
         val CODEC: PacketCodec<PacketByteBuf, LifeSyncPayload> =
             PacketCodec.of(
                 { value, buf ->
-                    buf.writeLong(value.birthEpochMs)
                     buf.writeInt(value.totalDeaths)
+                    buf.writeLong(value.currentAgeMs)
                 },
                 { buf ->
-                    val birthEpochMs = buf.readLong()
                     val totalDeaths = buf.readInt()
-                    LifeSyncPayload(birthEpochMs, totalDeaths)
+                    val currentAgeMs = buf.readLong()
+                    LifeSyncPayload(totalDeaths, currentAgeMs)
                 }
             )
     }
@@ -44,14 +44,14 @@ object SyncPackets {
         )
     }
 
-    fun sendLifeData(
-        player: ServerPlayerEntity,
-        birthEpochMs: Long,
-        totalDeaths: Int
-    ) {
+    fun sendLifeData(player: ServerPlayerEntity) {
+        val data = com.ekvicancode.asrealasyou.managers.LifeSystemManager.getData(player)
         ServerPlayNetworking.send(
             player,
-            LifeSyncPayload(birthEpochMs, totalDeaths)
+            LifeSyncPayload(
+                totalDeaths = data.totalDeaths,
+                currentAgeMs = data.currentAgeMs()
+            )
         )
     }
 }

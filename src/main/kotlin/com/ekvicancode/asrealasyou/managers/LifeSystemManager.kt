@@ -1,108 +1,113 @@
 package com.ekvicancode.asrealasyou.managers
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.annotations.SerializedName
-import net.minecraft.server.MinecraftServer
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.WorldSavePath
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import net.minecraft.server.MinecraftServer
+import org.slf4j.LoggerFactory
 import java.io.File
+
 data class PlayerLifeData(
-    @SerializedName("birth_epoch_ms")
     var birthEpochMs: Long = System.currentTimeMillis(),
-    @SerializedName("total_deaths")
     var totalDeaths: Int = 0,
-    @SerializedName("last_seen_epoch_ms")
-    var lastSeenEpochMs: Long = System.currentTimeMillis()
+    var accumulatedAgeMs: Long = 0L,
+    var lastSeenEpochMs: Long = System.currentTimeMillis(),
+    var lastDaySpeed: Double = 24.0
 ) {
-    val ageMs: Long
-        get() = System.currentTimeMillis() - birthEpochMs
+    fun currentAgeMs(nowMs: Long = System.currentTimeMillis(), currentSpeed: Double = RealTimeManager.daySpeed): Long {
+        val elapsed = nowMs - lastSeenEpochMs
+        val scaleFactor = currentSpeed / 24.0
+        return accumulatedAgeMs + (elapsed * scaleFactor).toLong()
+    }
 
-    val ageDays: Long
-        get() = ageMs / (1000L * 60L * 60L * 24L)
+    val ageDays: Long get() = currentAgeMs() / (1000L * 60 * 60 * 24)
+    val ageYears: Long get() = ageDays / 365L
 
-    val ageYears: Long
-        get() = ageDays / 365L
+    fun flushAge(nowMs: Long = System.currentTimeMillis()) {
+        val elapsed = nowMs - lastSeenEpochMs
+        val scaleFactor = RealTimeManager.daySpeed / 24.0
+        accumulatedAgeMs += (elapsed * scaleFactor).toLong()
+        lastSeenEpochMs = nowMs
+        lastDaySpeed = RealTimeManager.daySpeed
+    }
 }
 
 object LifeSystemManager {
-
-    private val playerData = mutableMapOf<String, PlayerLifeData>()
+    private val LOGGER = LoggerFactory.getLogger("LifeSystemManager")
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
-    private var dataDir: File? = null
+    private val players = mutableMapOf<String, PlayerLifeData>()
+    private lateinit var saveDir: File
+
+    private const val MAX_AGE_MS = 80L * 365 * 24 * 60 * 60 * 1000
 
     fun init(server: MinecraftServer) {
-        dataDir = File(
-            server.getSavePath(WorldSavePath.ROOT).toFile(),
-            "asrealasyou"
-        )
-        dataDir!!.mkdirs()
-    }
-
-    private fun getFile(uuid: String): File {
-        return File(dataDir, "$uuid.json")
-    }
-
-    fun getData(player: ServerPlayerEntity): PlayerLifeData {
-        return playerData.getOrPut(player.uuidAsString) {
-            PlayerLifeData(birthEpochMs = System.currentTimeMillis())
-        }
+        saveDir = server.getSavePath(WorldSavePath.ROOT).resolve("playerdata_life").toFile()
+        saveDir.mkdirs()
     }
 
     fun loadPlayer(player: ServerPlayerEntity) {
-        val file = getFile(player.uuidAsString)
-        if (file.exists()) {
+        val file = File(saveDir, "${player.uuidAsString}.json")
+        val data = if (file.exists()) {
             try {
-                val data = gson.fromJson(file.readText(), PlayerLifeData::class.java)
-                playerData[player.uuidAsString] = data
+                gson.fromJson(file.readText(), PlayerLifeData::class.java)
             } catch (e: Exception) {
-                playerData[player.uuidAsString] = PlayerLifeData(
-                    birthEpochMs = System.currentTimeMillis()
-                )
+                LOGGER.error("Failed to load data for ${player.name.string}", e)
+                PlayerLifeData()
             }
         } else {
-            playerData[player.uuidAsString] = PlayerLifeData(
-                birthEpochMs = System.currentTimeMillis()
-            )
-            savePlayer(player)
+            PlayerLifeData()
         }
+        data.lastSeenEpochMs = System.currentTimeMillis()
+        players[player.uuidAsString] = data
     }
 
     fun savePlayer(player: ServerPlayerEntity) {
-        val data = getData(player)
-        val file = getFile(player.uuidAsString)
+        val data = players[player.uuidAsString] ?: return
+        val file = File(saveDir, "${player.uuidAsString}.json")
         try {
             file.writeText(gson.toJson(data))
         } catch (e: Exception) {
-            // ignore
+            LOGGER.error("Failed to save data for ${player.name.string}", e)
+        }
+    }
+
+    fun getData(player: ServerPlayerEntity): PlayerLifeData {
+        return players[player.uuidAsString] ?: PlayerLifeData().also {
+            players[player.uuidAsString] = it
         }
     }
 
     fun onPlayerLeave(player: ServerPlayerEntity) {
-        val data = getData(player)
-        data.lastSeenEpochMs = System.currentTimeMillis()
-        savePlayer(player)
-    }
-
-    fun onPlayerDeath(player: ServerPlayerEntity) {
-        val data = getData(player)
-        data.totalDeaths++
-        data.birthEpochMs = System.currentTimeMillis()
-        data.lastSeenEpochMs = System.currentTimeMillis()
-        playerData[player.uuidAsString] = data
+        val data = players[player.uuidAsString] ?: return
+        data.flushAge()
         savePlayer(player)
     }
 
     fun removePlayer(player: ServerPlayerEntity) {
-        playerData.remove(player.uuidAsString)
+        players.remove(player.uuidAsString)
     }
-    
-    fun checkAgeLimitAndKill(player: ServerPlayerEntity): Boolean {
+
+    fun onPlayerDeath(player: ServerPlayerEntity) {
+        val data = players[player.uuidAsString] ?: return
+        data.flushAge()
+        data.totalDeaths++
+        data.accumulatedAgeMs = 0L
+        data.birthEpochMs = System.currentTimeMillis()
+        data.lastSeenEpochMs = System.currentTimeMillis()
+        data.lastDaySpeed = RealTimeManager.daySpeed
+        savePlayer(player)
+    }
+
+    fun checkAgeLimitAndKill(player: ServerPlayerEntity) {
         val data = getData(player)
-        if (data.ageYears >= 70) {
+        if (data.currentAgeMs() >= MAX_AGE_MS) {
             player.kill()
-            return true
         }
-        return false
+    }
+
+    fun flushAllPlayers() {
+        val nowMs = System.currentTimeMillis()
+        players.values.forEach { it.flushAge(nowMs) }
     }
 }

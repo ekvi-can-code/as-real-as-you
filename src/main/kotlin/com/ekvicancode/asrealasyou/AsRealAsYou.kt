@@ -45,17 +45,12 @@ object AsRealAsYou : ModInitializer {
 			LifeSystemManager.loadPlayer(player)
 			val data = LifeSystemManager.getData(player)
 
-			val absentMs = System.currentTimeMillis() - data.lastSeenEpochMs
-			val absentMinutes = absentMs / 60000L
+			LOGGER.info(
+				"Player ${player.name.string} joined. " +
+						"Age: ${data.ageDays} days, Deaths: ${data.totalDeaths}"
+			)
 
-			if (absentMinutes > 0) {
-				LOGGER.info(
-					"Player ${player.name.string} absent for $absentMinutes min. " +
-							"Age: ${data.ageDays} days"
-				)
-			}
-
-			SyncPackets.sendLifeData(player, data.birthEpochMs, data.totalDeaths)
+			SyncPackets.sendLifeData(player)
 
 			player.sendMessage(
 				Text.literal(
@@ -83,6 +78,9 @@ object AsRealAsYou : ModInitializer {
 				tickCounter = 0
 				syncTimeForAllWorlds(server)
 				checkAgeLimits(server)
+				server.playerManager.playerList.forEach { player ->
+					SyncPackets.sendLifeData(player)
+				}
 			}
 		}
 
@@ -97,7 +95,7 @@ object AsRealAsYou : ModInitializer {
 			Text.literal("§cВы умерли! Жизнь начинается заново.")
 		)
 
-		SyncPackets.sendLifeData(player, data.birthEpochMs, data.totalDeaths)
+		SyncPackets.sendLifeData(player)
 		resetPlayerProgress(player)
 	}
 
@@ -137,7 +135,7 @@ object AsRealAsYou : ModInitializer {
 		val newTime = currentDay * 24000L + timeOfDay
 		world.timeOfDay = newTime
 	}
-	
+
 	private fun checkAgeLimits(server: MinecraftServer) {
 		for (player in server.playerManager.playerList) {
 			LifeSystemManager.checkAgeLimitAndKill(player)

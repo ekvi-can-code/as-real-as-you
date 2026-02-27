@@ -189,8 +189,9 @@ object PassportHUD {
         )
         textY += 5
 
-        val now = LocalTime.now()
-        val timeStr = String.format("%02d:%02d:%02d", now.hour, now.minute, now.second)
+        val gameTime = com.ekvicancode.asrealasyou.managers.RealTimeManager.getCurrentGameTimeExact()
+        val (gameHours, gameMinutes, gameSeconds) = com.ekvicancode.asrealasyou.managers.RealTimeManager.gameTimeToRealClock(gameTime)
+        val timeStr = String.format("%02d:%02d:%02d", gameHours, gameMinutes, gameSeconds)
 
         drawContext.drawTextWithShadow(
             textRenderer,

@@ -1,5 +1,6 @@
 package com.ekvicancode.asrealasyou.commands
 
+import com.ekvicancode.asrealasyou.managers.LifeSystemManager
 import com.ekvicancode.asrealasyou.managers.RealTimeManager
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.IntegerArgumentType
@@ -13,17 +14,22 @@ object ModCommands {
             CommandManager.literal("changedayspeed")
                 .requires { it.hasPermissionLevel(4) }
                 .executes { context ->
-                    val speed = 24
-                    RealTimeManager.daySpeed = speed.toDouble()
-                    context.source.sendFeedback({ Text.literal("Скорость дня установлена: $speed") }, false)
+                    LifeSystemManager.flushAllPlayers()
+                    RealTimeManager.daySpeed = 24.0
+                    context.source.sendFeedback(
+                        { Text.literal("Скорость дня установлена: 24") }, false
+                    )
                     1
                 }
                 .then(
                     CommandManager.argument("speed", IntegerArgumentType.integer(1))
                         .executes { context ->
                             val speed = IntegerArgumentType.getInteger(context, "speed")
+                            LifeSystemManager.flushAllPlayers()
                             RealTimeManager.daySpeed = speed.toDouble()
-                            context.source.sendFeedback({ Text.literal("Скорость дня установлена: $speed") }, false)
+                            context.source.sendFeedback(
+                                { Text.literal("Скорость дня установлена: $speed") }, false
+                            )
                             1
                         }
                 )
