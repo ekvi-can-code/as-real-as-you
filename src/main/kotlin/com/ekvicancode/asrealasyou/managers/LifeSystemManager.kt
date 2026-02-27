@@ -15,8 +15,12 @@ data class PlayerLifeData(
     var lastSeenEpochMs: Long = System.currentTimeMillis(),
     var lastDaySpeed: Double = 24.0
 ) {
-    fun currentAgeMs(nowMs: Long = System.currentTimeMillis(), currentSpeed: Double = RealTimeManager.daySpeed): Long {
+    fun currentAgeMs(
+        nowMs: Long = System.currentTimeMillis(),
+        currentSpeed: Double = RealTimeManager.daySpeed
+    ): Long {
         val elapsed = nowMs - lastSeenEpochMs
+        if (elapsed <= 0) return accumulatedAgeMs
         val scaleFactor = currentSpeed / 24.0
         return accumulatedAgeMs + (elapsed * scaleFactor).toLong()
     }
@@ -24,12 +28,17 @@ data class PlayerLifeData(
     val ageDays: Long get() = currentAgeMs() / (1000L * 60 * 60 * 24)
     val ageYears: Long get() = ageDays / 365L
 
-    fun flushAge(nowMs: Long = System.currentTimeMillis()) {
+    fun flushAge(
+        nowMs: Long = System.currentTimeMillis(),
+        speed: Double = RealTimeManager.daySpeed
+    ) {
         val elapsed = nowMs - lastSeenEpochMs
-        val scaleFactor = RealTimeManager.daySpeed / 24.0
-        accumulatedAgeMs += (elapsed * scaleFactor).toLong()
+        if (elapsed > 0) {
+            val scaleFactor = speed / 24.0
+            accumulatedAgeMs += (elapsed * scaleFactor).toLong()
+        }
         lastSeenEpochMs = nowMs
-        lastDaySpeed = RealTimeManager.daySpeed
+        lastDaySpeed = speed
     }
 }
 
@@ -42,7 +51,9 @@ object LifeSystemManager {
     private const val MAX_AGE_MS = 80L * 365 * 24 * 60 * 60 * 1000
 
     fun init(server: MinecraftServer) {
-        saveDir = server.getSavePath(WorldSavePath.ROOT).resolve("playerdata_life").toFile()
+        saveDir = server.getSavePath(WorldSavePath.ROOT)
+            .resolve("playerdata_life")
+            .toFile()
         saveDir.mkdirs()
     }
 
@@ -50,12 +61,14 @@ object LifeSystemManager {
         val file = File(saveDir, "${player.uuidAsString}.json")
         val data = if (file.exists()) {
             try {
-                gson.fromJson(file.readText(), PlayerLifeData::class.java)
+                val loaded = gson.fromJson(file.readText(), PlayerLifeData::class.java)
+                loaded
             } catch (e: Exception) {
                 LOGGER.error("Failed to load data for ${player.name.string}", e)
                 PlayerLifeData()
             }
         } else {
+            LOGGER.info("No save found for ${player.name.string}, creating new")
             PlayerLifeData()
         }
         data.lastSeenEpochMs = System.currentTimeMillis()

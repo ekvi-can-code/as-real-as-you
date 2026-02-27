@@ -10,7 +10,8 @@ import net.minecraft.util.Identifier
 
 data class LifeSyncPayload(
     val totalDeaths: Int,
-    val currentAgeMs: Long
+    val currentAgeMs: Long,
+    val daySpeed: Double
 ) : CustomPayload {
 
     companion object {
@@ -23,11 +24,13 @@ data class LifeSyncPayload(
                 { value, buf ->
                     buf.writeInt(value.totalDeaths)
                     buf.writeLong(value.currentAgeMs)
+                    buf.writeDouble(value.daySpeed)
                 },
                 { buf ->
                     val totalDeaths = buf.readInt()
                     val currentAgeMs = buf.readLong()
-                    LifeSyncPayload(totalDeaths, currentAgeMs)
+                    val daySpeed = buf.readDouble()
+                    LifeSyncPayload(totalDeaths, currentAgeMs, daySpeed)
                 }
             )
     }
@@ -50,7 +53,8 @@ object SyncPackets {
             player,
             LifeSyncPayload(
                 totalDeaths = data.totalDeaths,
-                currentAgeMs = data.currentAgeMs()
+                currentAgeMs = data.currentAgeMs(),
+                daySpeed = com.ekvicancode.asrealasyou.managers.RealTimeManager.daySpeed
             )
         )
     }

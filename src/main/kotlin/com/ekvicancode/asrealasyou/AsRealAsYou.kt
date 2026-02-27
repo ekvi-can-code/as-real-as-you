@@ -22,7 +22,8 @@ object AsRealAsYou : ModInitializer {
 	const val MOD_ID = "asrealasyou"
 	val LOGGER = LoggerFactory.getLogger(MOD_ID)
 
-	private const val TIME_SYNC_INTERVAL = 20
+	private const val TIME_SYNC_INTERVAL = 2
+	private const val SAVE_INTERVAL = 6000
 	private var tickCounter = 0
 
 	override fun onInitialize() {
@@ -40,18 +41,20 @@ object AsRealAsYou : ModInitializer {
 			LOGGER.info("Daylight cycle disabled, real time sync active")
 		}
 
+		ServerLifecycleEvents.SERVER_STOPPING.register { server ->
+			LOGGER.info("Saving all player data...")
+			server.playerManager.playerList.forEach { player ->
+				val data = LifeSystemManager.getData(player)
+				data.flushAge()
+				LifeSystemManager.savePlayer(player)
+			}
+		}
+
 		ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
 			val player = handler.player
 			LifeSystemManager.loadPlayer(player)
 			val data = LifeSystemManager.getData(player)
-
-			LOGGER.info(
-				"Player ${player.name.string} joined. " +
-						"Age: ${data.ageDays} days, Deaths: ${data.totalDeaths}"
-			)
-
 			SyncPackets.sendLifeData(player)
-
 			player.sendMessage(
 				Text.literal(
 					"§aДобро пожаловать! Возраст: ${data.ageYears} лет " +
@@ -74,27 +77,32 @@ object AsRealAsYou : ModInitializer {
 
 		ServerTickEvents.END_SERVER_TICK.register { server ->
 			tickCounter++
-			if (tickCounter >= TIME_SYNC_INTERVAL) {
-				tickCounter = 0
+			if (tickCounter % TIME_SYNC_INTERVAL == 0) {
 				syncTimeForAllWorlds(server)
 				checkAgeLimits(server)
 				server.playerManager.playerList.forEach { player ->
 					SyncPackets.sendLifeData(player)
 				}
 			}
+			if (tickCounter % SAVE_INTERVAL == 0) {
+				tickCounter = 0
+				LOGGER.info("Auto-save players")
+				server.playerManager.playerList.forEach { player ->
+					val data = LifeSystemManager.getData(player)
+					data.flushAge()
+					LifeSystemManager.savePlayer(player)
+				}
+			}
 		}
-
 		LOGGER.info("AsRealAsYou initialized!")
 	}
 
 	private fun onPlayerDied(player: ServerPlayerEntity) {
 		LifeSystemManager.onPlayerDeath(player)
 		val data = LifeSystemManager.getData(player)
-
 		player.sendMessage(
 			Text.literal("§cВы умерли! Жизнь начинается заново.")
 		)
-
 		SyncPackets.sendLifeData(player)
 		resetPlayerProgress(player)
 	}
@@ -137,7 +145,7 @@ object AsRealAsYou : ModInitializer {
 	}
 
 	private fun checkAgeLimits(server: MinecraftServer) {
-		for (player in server.playerManager.playerList) {
+		server.playerManager.playerList.forEach { player ->
 			LifeSystemManager.checkAgeLimitAndKill(player)
 		}
 	}
