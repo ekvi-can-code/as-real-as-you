@@ -155,6 +155,12 @@ object PassportHUD {
         )
         textY += 14
 
+        drawContext.drawTextWithShadow(
+            textRenderer,
+            "§8[debug] ticks=${ClientLifeData.ageTicks} spd=${ClientLifeData.receivedDaySpeed}",
+            textX, textY + 100, 0xAAAAAA
+        )
+
         drawContext.fill(
             textX, textY,
             passportX + PASSPORT_WIDTH - 10, textY + 1,
@@ -189,8 +195,8 @@ object PassportHUD {
         )
         textY += 5
 
-        val gameTime = com.ekvicancode.asrealasyou.managers.RealTimeManager.getCurrentGameTimeExact()
-        val (gameHours, gameMinutes, gameSeconds) = com.ekvicancode.asrealasyou.managers.RealTimeManager.gameTimeToRealClock(gameTime)
+        val gameTimeTicks = com.ekvicancode.asrealasyou.managers.RealTimeManager.getCurrentGameTimeExact()
+        val (gameHours, gameMinutes, gameSeconds) = com.ekvicancode.asrealasyou.managers.RealTimeManager.gameTimeToRealClock(gameTimeTicks)
         val timeStr = String.format("%02d:%02d:%02d", gameHours, gameMinutes, gameSeconds)
 
         drawContext.drawTextWithShadow(
@@ -202,7 +208,7 @@ object PassportHUD {
 
         drawContext.drawTextWithShadow(
             textRenderer,
-            "§b$timeStr",
+            "§b$gameTimeTicks debug",
             textX, textY, 0xFFFFFF
         )
         textY += 14

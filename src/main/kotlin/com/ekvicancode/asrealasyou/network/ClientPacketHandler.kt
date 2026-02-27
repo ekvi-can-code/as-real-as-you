@@ -7,24 +7,23 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 @Environment(EnvType.CLIENT)
 object ClientLifeData {
     var totalDeaths: Int = 0
-    var receivedAgeMs: Long = 0L
+    var receivedAgeTicks: Long = 0L
     var receivedAtMs: Long = System.currentTimeMillis()
-
     var receivedDaySpeed: Double = 24.0
 
-    val ageMs: Long
+    val ageTicks: Long
         get() {
-            val elapsed = System.currentTimeMillis() - receivedAtMs
-            val scaleFactor = receivedDaySpeed / 24.0
-            return receivedAgeMs + (elapsed * scaleFactor).toLong()
+            val elapsedMs = System.currentTimeMillis() - receivedAtMs
+            val ticksSinceReceived = (elapsedMs.toDouble() * receivedDaySpeed / 86_400.0).toLong()
+            return receivedAgeTicks + ticksSinceReceived
         }
 
-    val ageDays: Long get() = ageMs / (1000L * 60 * 60 * 24)
+    val ageDays: Long get() = ageTicks / 24_000L
     val ageYears: Long get() = ageDays / 365L
 
-    fun onSyncReceived(totalDeaths: Int, currentAgeMs: Long, daySpeed: Double) {
+    fun onSyncReceived(totalDeaths: Int, ageTicks: Long, daySpeed: Double) {
         this.totalDeaths = totalDeaths
-        this.receivedAgeMs = currentAgeMs
+        this.receivedAgeTicks = ageTicks
         this.receivedAtMs = System.currentTimeMillis()
         this.receivedDaySpeed = daySpeed
     }
@@ -36,7 +35,7 @@ object ClientPacketHandler {
         ClientPlayNetworking.registerGlobalReceiver(LifeSyncPayload.ID) { payload, _ ->
             ClientLifeData.onSyncReceived(
                 payload.totalDeaths,
-                payload.currentAgeMs,
+                payload.ageTicks,
                 payload.daySpeed
             )
         }

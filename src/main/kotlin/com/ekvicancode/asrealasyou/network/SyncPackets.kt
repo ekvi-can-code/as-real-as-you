@@ -1,5 +1,7 @@
 package com.ekvicancode.asrealasyou.network
 
+import com.ekvicancode.asrealasyou.managers.LifeSystemManager
+import com.ekvicancode.asrealasyou.managers.RealTimeManager
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.network.PacketByteBuf
@@ -10,7 +12,7 @@ import net.minecraft.util.Identifier
 
 data class LifeSyncPayload(
     val totalDeaths: Int,
-    val currentAgeMs: Long,
+    val ageTicks: Long,
     val daySpeed: Double
 ) : CustomPayload {
 
@@ -23,14 +25,15 @@ data class LifeSyncPayload(
             PacketCodec.of(
                 { value, buf ->
                     buf.writeInt(value.totalDeaths)
-                    buf.writeLong(value.currentAgeMs)
+                    buf.writeLong(value.ageTicks)
                     buf.writeDouble(value.daySpeed)
                 },
                 { buf ->
-                    val totalDeaths = buf.readInt()
-                    val currentAgeMs = buf.readLong()
-                    val daySpeed = buf.readDouble()
-                    LifeSyncPayload(totalDeaths, currentAgeMs, daySpeed)
+                    LifeSyncPayload(
+                        totalDeaths = buf.readInt(),
+                        ageTicks = buf.readLong(),
+                        daySpeed = buf.readDouble()
+                    )
                 }
             )
     }
@@ -48,13 +51,16 @@ object SyncPackets {
     }
 
     fun sendLifeData(player: ServerPlayerEntity) {
-        val data = com.ekvicancode.asrealasyou.managers.LifeSystemManager.getData(player)
+        val ticks = LifeSystemManager.currentAgeTicks(player)
+        val data = LifeSystemManager.getData(player)
+        val speed = RealTimeManager.daySpeed
+
         ServerPlayNetworking.send(
             player,
             LifeSyncPayload(
                 totalDeaths = data.totalDeaths,
-                currentAgeMs = data.currentAgeMs(),
-                daySpeed = com.ekvicancode.asrealasyou.managers.RealTimeManager.daySpeed
+                ageTicks = ticks,
+                daySpeed = speed
             )
         )
     }

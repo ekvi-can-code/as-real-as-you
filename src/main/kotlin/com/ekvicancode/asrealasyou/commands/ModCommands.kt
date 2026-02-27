@@ -14,21 +14,23 @@ object ModCommands {
             CommandManager.literal("changedayspeed")
                 .requires { it.hasPermissionLevel(4) }
                 .executes { context ->
-                    LifeSystemManager.flushAllPlayers()
+                    val server = context.source.server
+                    LifeSystemManager.flushAllPlayers(server.playerManager.playerList)
                     RealTimeManager.daySpeed = 24.0
                     context.source.sendFeedback(
-                        { Text.literal("Скорость дня установлена: 24") }, false
+                        { Text.literal("Скорость дня: 24") }, true
                     )
                     1
                 }
                 .then(
                     CommandManager.argument("speed", IntegerArgumentType.integer(1))
                         .executes { context ->
+                            val server = context.source.server
                             val speed = IntegerArgumentType.getInteger(context, "speed")
-                            LifeSystemManager.flushAllPlayers()
+                            LifeSystemManager.flushAllPlayers(server.playerManager.playerList)
                             RealTimeManager.daySpeed = speed.toDouble()
                             context.source.sendFeedback(
-                                { Text.literal("Скорость дня установлена: $speed") }, false
+                                { Text.literal("Скорость дня: $speed (${speed/24.0}x)") }, true
                             )
                             1
                         }

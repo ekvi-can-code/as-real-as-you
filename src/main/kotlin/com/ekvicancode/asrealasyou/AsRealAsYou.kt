@@ -3,6 +3,7 @@ package com.ekvicancode.asrealasyou
 import com.ekvicancode.asrealasyou.commands.ModCommands
 import com.ekvicancode.asrealasyou.managers.LifeSystemManager
 import com.ekvicancode.asrealasyou.managers.RealTimeManager
+import com.ekvicancode.asrealasyou.network.ClientLifeData
 import com.ekvicancode.asrealasyou.network.SyncPackets
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
@@ -22,7 +23,7 @@ object AsRealAsYou : ModInitializer {
 	const val MOD_ID = "asrealasyou"
 	val LOGGER = LoggerFactory.getLogger(MOD_ID)
 
-	private const val TIME_SYNC_INTERVAL = 2
+	private const val SYNC_INTERVAL = 5
 	private const val SAVE_INTERVAL = 6000
 	private var tickCounter = 0
 
@@ -38,27 +39,30 @@ object AsRealAsYou : ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register { server ->
 			LifeSystemManager.init(server)
 			disableDaylightCycle(server)
-			LOGGER.info("Daylight cycle disabled, real time sync active")
+			LOGGER.info("Server started, daylight cycle disabled")
 		}
 
 		ServerLifecycleEvents.SERVER_STOPPING.register { server ->
-			LOGGER.info("Saving all player data...")
-			server.playerManager.playerList.forEach { player ->
-				val data = LifeSystemManager.getData(player)
-				data.flushAge()
-				LifeSystemManager.savePlayer(player)
-			}
+			LOGGER.info("Saving all players...")
+			val players = server.playerManager.playerList
+			LifeSystemManager.flushAllPlayers(players)
+			players.forEach { LifeSystemManager.savePlayer(it) }
 		}
 
 		ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
 			val player = handler.player
 			LifeSystemManager.loadPlayer(player)
+
 			val data = LifeSystemManager.getData(player)
+			val days = ClientLifeData.ageDays
+			val years = ClientLifeData.ageYears
+
 			SyncPackets.sendLifeData(player)
+
 			player.sendMessage(
 				Text.literal(
-					"§aДобро пожаловать! Возраст: ${data.ageYears} лет " +
-							"(${data.ageDays} дней). Перерождений: ${data.totalDeaths}"
+					"§aДобро пожаловать! Возраст: $years лет " +
+							"($days дней). Перерождений: ${data.totalDeaths}"
 				)
 			)
 		}
@@ -77,32 +81,31 @@ object AsRealAsYou : ModInitializer {
 
 		ServerTickEvents.END_SERVER_TICK.register { server ->
 			tickCounter++
-			if (tickCounter % TIME_SYNC_INTERVAL == 0) {
+
+			if (tickCounter % SYNC_INTERVAL == 0) {
 				syncTimeForAllWorlds(server)
 				checkAgeLimits(server)
 				server.playerManager.playerList.forEach { player ->
 					SyncPackets.sendLifeData(player)
 				}
 			}
+
 			if (tickCounter % SAVE_INTERVAL == 0) {
 				tickCounter = 0
 				LOGGER.info("Auto-save players")
-				server.playerManager.playerList.forEach { player ->
-					val data = LifeSystemManager.getData(player)
-					data.flushAge()
-					LifeSystemManager.savePlayer(player)
-				}
+				val players = server.playerManager.playerList
+				LifeSystemManager.flushAllPlayers(players)
+				players.forEach { LifeSystemManager.savePlayer(it) }
 			}
 		}
+
 		LOGGER.info("AsRealAsYou initialized!")
 	}
 
 	private fun onPlayerDied(player: ServerPlayerEntity) {
 		LifeSystemManager.onPlayerDeath(player)
 		val data = LifeSystemManager.getData(player)
-		player.sendMessage(
-			Text.literal("§cВы умерли! Жизнь начинается заново.")
-		)
+		player.sendMessage(Text.literal("§cВы умерли! Жизнь начинается заново."))
 		SyncPackets.sendLifeData(player)
 		resetPlayerProgress(player)
 	}
@@ -140,8 +143,7 @@ object AsRealAsYou : ModInitializer {
 
 	private fun setWorldTime(world: ServerWorld, timeOfDay: Long) {
 		val currentDay = world.timeOfDay / 24000L
-		val newTime = currentDay * 24000L + timeOfDay
-		world.timeOfDay = newTime
+		world.timeOfDay = currentDay * 24000L + timeOfDay
 	}
 
 	private fun checkAgeLimits(server: MinecraftServer) {
