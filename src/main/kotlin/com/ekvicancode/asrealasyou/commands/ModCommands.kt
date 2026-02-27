@@ -30,7 +30,7 @@ object ModCommands {
                             LifeSystemManager.flushAllPlayers(server.playerManager.playerList)
                             RealTimeManager.daySpeed = speed.toDouble()
                             context.source.sendFeedback(
-                                { Text.literal("Скорость дня: $speed (${speed}x)") }, true
+                                { Text.literal("Скорость дня: $speed") }, true
                             )
                             1
                         }
