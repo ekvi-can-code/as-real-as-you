@@ -1,10 +1,11 @@
 package com.ekvicancode.asrealasyou.managers
 
-import java.time.Instant
 import java.time.ZoneId
 
 object RealTimeManager {
-    var daySpeed: Double = 24.0
+    var daySpeed: Double = 1.0
+    private var baseRealMs: Long = System.currentTimeMillis()
+    private var baseGameTicks: Long = 0L
 
     val realMsPerGameDay: Double
         get() = 86_400_000.0 / daySpeed
@@ -20,24 +21,21 @@ object RealTimeManager {
         return (ticks * 3_600.0 / daySpeed).toLong()
     }
 
-    fun getCurrentGameTimeExact(zoneId: ZoneId = ZoneId.systemDefault()): Long {
+    fun initBase(zoneId: ZoneId = ZoneId.systemDefault()) {
         val now = java.time.LocalTime.now(zoneId)
         val realMsOfDay = (now.hour * 3_600L + now.minute * 60L + now.second) * 1_000L +
                 now.nano / 1_000_000L
 
-        val msPerDay = realMsPerGameDay
         val shiftedMs = (realMsOfDay - 6 * 3_600_000L + 86_400_000L) % 86_400_000L
-        val positionInGameDay = shiftedMs % msPerDay
-        return ((positionInGameDay / msPerDay) * 24_000L).toLong()
+        baseGameTicks = ((shiftedMs.toDouble() / 86_400_000.0) * 24_000L).toLong()
+        baseRealMs = System.currentTimeMillis()
     }
 
-    fun gameTimeToRealClock(gameTicks: Long): Triple<Int, Int, Int> {
-        val realMsFromDawn = gameTicksToRealMs(gameTicks)
-        val realMsOfDay = (realMsFromDawn + 6 * 3_600_000L) % 86_400_000L
-        val totalSeconds = realMsOfDay / 1_000L
-        val hours = (totalSeconds / 3_600L).toInt()
-        val minutes = ((totalSeconds % 3_600L) / 60L).toInt()
-        val seconds = (totalSeconds % 60L).toInt()
-        return Triple(hours, minutes, seconds)
+    fun getCurrentGameTimeTicks(): Long {
+        val elapsedRealMs = System.currentTimeMillis() - baseRealMs
+        val elapsedGameTicks = (elapsedRealMs.toDouble() * daySpeed / realMsPerTick / daySpeed).toLong()
+        val ticks = (elapsedRealMs.toDouble() * 24_000.0 * daySpeed / 86_400_000.0).toLong()
+        return (baseGameTicks + ticks) % 24_000L
     }
+
 }

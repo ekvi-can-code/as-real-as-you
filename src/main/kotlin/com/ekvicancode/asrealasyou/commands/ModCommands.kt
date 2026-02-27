@@ -16,9 +16,9 @@ object ModCommands {
                 .executes { context ->
                     val server = context.source.server
                     LifeSystemManager.flushAllPlayers(server.playerManager.playerList)
-                    RealTimeManager.daySpeed = 24.0
+                    RealTimeManager.daySpeed = 1.0
                     context.source.sendFeedback(
-                        { Text.literal("Скорость дня: 24") }, true
+                        { Text.literal("Скорость дня: 1") }, true
                     )
                     1
                 }
@@ -30,7 +30,7 @@ object ModCommands {
                             LifeSystemManager.flushAllPlayers(server.playerManager.playerList)
                             RealTimeManager.daySpeed = speed.toDouble()
                             context.source.sendFeedback(
-                                { Text.literal("Скорость дня: $speed (${speed/24.0}x)") }, true
+                                { Text.literal("Скорость дня: $speed (${speed}x)") }, true
                             )
                             1
                         }

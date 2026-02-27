@@ -25,6 +25,17 @@ object PassportHUD {
             render(drawContext, tickCounter)
         }
     }
+    private fun worldTicksToTimeString(worldTimeTicks: Long): String {
+        val dayTicks     = worldTimeTicks % 24_000L
+        val shiftedTicks = (dayTicks + 6_000L) % 24_000L
+        val totalSeconds = shiftedTicks * 86_400L / 24_000L
+
+        val hours   = (totalSeconds / 3_600L) % 24L
+        val minutes = (totalSeconds % 3_600L) / 60L
+        val seconds = totalSeconds % 60L
+
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds)
+    }
 
     private fun render(drawContext: DrawContext, tickCounter: RenderTickCounter) {
         if (!isVisible) return
@@ -155,11 +166,11 @@ object PassportHUD {
         )
         textY += 14
 
-        drawContext.drawTextWithShadow(
-            textRenderer,
-            "§8[debug] ticks=${ClientLifeData.ageTicks} spd=${ClientLifeData.receivedDaySpeed}",
-            textX, textY + 100, 0xAAAAAA
-        )
+        //drawContext.drawTextWithShadow(
+        //    textRenderer,
+        //    "§8[debug] ticks=${ClientLifeData.ageTicks} spd=${ClientLifeData.receivedDaySpeed}",
+        //    textX, textY + 100, 0xAAAAAA
+        //)
 
         drawContext.fill(
             textX, textY,
@@ -195,9 +206,7 @@ object PassportHUD {
         )
         textY += 5
 
-        val gameTimeTicks = com.ekvicancode.asrealasyou.managers.RealTimeManager.getCurrentGameTimeExact()
-        val (gameHours, gameMinutes, gameSeconds) = com.ekvicancode.asrealasyou.managers.RealTimeManager.gameTimeToRealClock(gameTimeTicks)
-        val timeStr = String.format("%02d:%02d:%02d", gameHours, gameMinutes, gameSeconds)
+        val timeStr = worldTicksToTimeString(client.world?.timeOfDay ?: 0L)
 
         drawContext.drawTextWithShadow(
             textRenderer,
@@ -208,7 +217,7 @@ object PassportHUD {
 
         drawContext.drawTextWithShadow(
             textRenderer,
-            "§b$gameTimeTicks debug",
+            "§b$timeStr",
             textX, textY, 0xFFFFFF
         )
         textY += 14

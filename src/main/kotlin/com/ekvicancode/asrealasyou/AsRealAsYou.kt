@@ -39,7 +39,8 @@ object AsRealAsYou : ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register { server ->
 			LifeSystemManager.init(server)
 			disableDaylightCycle(server)
-			LOGGER.info("Server started, daylight cycle disabled")
+			RealTimeManager.initBase()
+			LOGGER.info("Server started, time initialized")
 		}
 
 		ServerLifecycleEvents.SERVER_STOPPING.register { server ->
@@ -104,7 +105,6 @@ object AsRealAsYou : ModInitializer {
 
 	private fun onPlayerDied(player: ServerPlayerEntity) {
 		LifeSystemManager.onPlayerDeath(player)
-		val data = LifeSystemManager.getData(player)
 		player.sendMessage(Text.literal("§cВы умерли! Жизнь начинается заново."))
 		SyncPackets.sendLifeData(player)
 		resetPlayerProgress(player)
@@ -123,8 +123,7 @@ object AsRealAsYou : ModInitializer {
 			spawnPos.y.toDouble(),
 			spawnPos.z.toDouble() + 0.5,
 			emptySet(),
-			0f,
-			0f
+			0f, 0f
 		)
 	}
 
@@ -135,7 +134,7 @@ object AsRealAsYou : ModInitializer {
 	}
 
 	private fun syncTimeForAllWorlds(server: MinecraftServer) {
-		val gameTime = RealTimeManager.getCurrentGameTimeExact()
+		val gameTime = RealTimeManager.getCurrentGameTimeTicks()
 		server.worlds.forEach { world ->
 			setWorldTime(world, gameTime)
 		}
