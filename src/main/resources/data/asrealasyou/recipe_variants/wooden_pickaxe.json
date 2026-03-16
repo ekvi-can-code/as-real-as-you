@@ -1,0 +1,48 @@
+{
+  "item": "minecraft:wooden_pickaxe",
+  "variants": [
+    {
+      "id": 0,
+      "type": "shaped",
+      "pattern": [
+        " P ",
+        "PSP",
+        " S "
+      ],
+      "key": {
+        "P": "minecraft:oak_planks",
+        "S": "minecraft:stick"
+      },
+      "result_count": 1
+    },
+    {
+      "id": 1,
+      "type": "shaped",
+      "pattern": [
+        "PLP",
+        " S ",
+        " S "
+      ],
+      "key": {
+        "P": "minecraft:oak_planks",
+        "L": "minecraft:oak_log",
+        "S": "minecraft:stick"
+      },
+      "result_count": 1
+    },
+    {
+      "id": 2,
+      "type": "shaped",
+      "pattern": [
+        " PP",
+        " SP",
+        "S  "
+      ],
+      "key": {
+        "P": "minecraft:oak_planks",
+        "S": "minecraft:stick"
+      },
+      "result_count": 1
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.ekvicancode.asrealasyou.network
 
+import com.ekvicancode.asrealasyou.AsRealAsYou
 import com.ekvicancode.asrealasyou.managers.LifeSystemManager
 import com.ekvicancode.asrealasyou.managers.RealTimeManager
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
@@ -44,10 +45,8 @@ data class LifeSyncPayload(
 object SyncPackets {
 
     fun registerServer() {
-        PayloadTypeRegistry.playS2C().register(
-            LifeSyncPayload.ID,
-            LifeSyncPayload.CODEC
-        )
+        PayloadTypeRegistry.playS2C().register(LifeSyncPayload.ID, LifeSyncPayload.CODEC)
+        PayloadTypeRegistry.playS2C().register(RecipeSyncPayload.ID, RecipeSyncPayload.CODEC)
     }
 
     fun sendLifeData(player: ServerPlayerEntity) {
@@ -63,5 +62,23 @@ object SyncPackets {
                 daySpeed = speed
             )
         )
+    }
+
+    fun sendRecipeData(player: ServerPlayerEntity) {
+        val craftingData = AsRealAsYou.playerCraftingData ?: return
+        val assigned = craftingData.getAllAssignedVariants(player.uuid)
+
+        try {
+            ServerPlayNetworking.send(player, RecipeSyncPayload(assigned))
+            AsRealAsYou.LOGGER.debug(
+                "Synced {} custom recipes to player {}",
+                assigned.size, player.name.string
+            )
+        } catch (e: Exception) {
+            AsRealAsYou.LOGGER.warn(
+                "Failed to sync recipes to player {}: {}",
+                player.name.string, e.message
+            )
+        }
     }
 }

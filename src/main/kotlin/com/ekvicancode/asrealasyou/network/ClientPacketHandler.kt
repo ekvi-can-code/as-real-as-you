@@ -30,6 +30,16 @@ object ClientLifeData {
 }
 
 @Environment(EnvType.CLIENT)
+object ClientRecipeData {
+    var assignedVariants: Map<String, Int> = emptyMap()
+        private set
+
+    fun onSyncReceived(variants: Map<String, Int>) {
+        assignedVariants = variants
+    }
+}
+
+@Environment(EnvType.CLIENT)
 object ClientPacketHandler {
     fun register() {
         ClientPlayNetworking.registerGlobalReceiver(LifeSyncPayload.ID) { payload, _ ->
@@ -38,6 +48,10 @@ object ClientPacketHandler {
                 payload.ageTicks,
                 payload.daySpeed
             )
+        }
+
+        ClientPlayNetworking.registerGlobalReceiver(RecipeSyncPayload.ID) { payload, _ ->
+            ClientRecipeData.onSyncReceived(payload.assignedVariants)
         }
     }
 }

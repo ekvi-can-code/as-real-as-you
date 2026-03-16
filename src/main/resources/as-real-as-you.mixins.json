@@ -1,8 +1,11 @@
 {
 	"required": true,
-	"package": "com.ekvicancode.asrealasyou.mixins",
+	"package": "com.ekvicancode.asrealasyou.mixin",
 	"compatibilityLevel": "JAVA_21",
-	"mixins": [],
+	"mixins": [
+		"CraftingScreenHandlerMixin",
+		"PlayerRespawnMixin"
+	],
 	"client": [],
 	"injectors": {
 		"defaultRequire": 1
